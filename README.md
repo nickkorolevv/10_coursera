@@ -1,7 +1,18 @@
-# Coursera Dump
+# Данные о курсах на Курсере
 
-[TODO. There will be project description]
 
-# Project Goals
+Этот скрипт  собирает информацию о 20 случайных курсах на Курсере, приводит её в удобный для обработки вид и выгружает в эксель-файл.
+ 
+ # Быстрый старт 
+ Для установки всех необходимых библиотек введите следующую команду
+ ```
+ pip install requirements.txt
+ ```
+ Для того, чтобы запустить скрипт необходимо ввести следующую команду
+ ```
+ python coursera.py
+ ```
 
-The code is written for educational purposes. Training course for web-developers - [DEVMAN.org](https://devman.org)
+# Цели проекта
+
+Код создан в учебных целях. В рамках учебного курса по веб-разработке -  [DEVMAN.org](https://devman.org/)
