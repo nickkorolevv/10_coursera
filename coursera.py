@@ -64,9 +64,10 @@ def output_courses_info_to_xlsx(courses_info):
 if __name__ == "__main__":
     page_xml = "https://www.coursera.org/sitemap~www~courses.xml"
     all_urls_list = get_courses_list(page_xml)
+    number_of_courses = 20
     urls_list = random.sample(
         all_urls_list,
-        20
+        number_of_courses
     )
     courses_info_list = []
     for url in urls_list:
