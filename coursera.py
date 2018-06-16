@@ -4,11 +4,20 @@ from bs4 import BeautifulSoup
 import json
 from openpyxl import Workbook
 import random
+import argparse
 
 
-def get_courses_list(page_xml):
-    response_content = requests.get(page_xml).content
-    tree = etree.fromstring(response_content)
+def create_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filepath")
+    parser.add_argument("--output", type=str, default="example.xls") 
+    return parser
+
+
+def get_courses_urls(xml_file):
+    with open(xml_file, "r") as xml_file:
+        xml = xml_file.read()
+    tree = etree.fromstring(xml)
     urls = [url.text for url in tree.iter("{*}loc")]
     return urls
 
@@ -28,15 +37,14 @@ def get_course_info(url):
     try:
         near_course = json.loads(json_course)["hasCourseInstance"]["startDate"]
     except KeyError:
-        near_course = "Нет доступных предстоящих сессий"
-    course_info_dict = {}
-    course_info_dict.update(
-        {"Название курса": course_name,
+        near_course = None
+    course_info_dict ={
+        "Название курса": course_name,
          "Язык курса": course_language,
          "Длительность курса": course_duration,
          "Оценка": course_mark,
-         "Ближайший курс": near_course}
-    )
+         "Ближайший курс": near_course
+    }
     return course_info_dict
 
 
@@ -62,9 +70,11 @@ def output_courses_info_to_xlsx(courses_info):
 
 
 if __name__ == "__main__":
-    page_xml = "https://www.coursera.org/sitemap~www~courses.xml"
-    all_urls_list = get_courses_list(page_xml)
-    number_of_courses = 20
+    parser = create_parser()
+    parsargs = parser.parse_args()
+    xml_file = parsargs.filepath
+    all_urls_list = get_courses_urls(xml_file)
+    number_of_courses = 2
     urls_list = random.sample(
         all_urls_list,
         number_of_courses
@@ -74,4 +84,5 @@ if __name__ == "__main__":
         course_info = get_course_info(url)
         courses_info_list.append(course_info)
     courses_workbook = output_courses_info_to_xlsx(courses_info_list)
-    courses_workbook.save("example.xls")
+    output_filepath = "{}.xls".format(parsargs.output)
+    courses_workbook.save(output_filepath)
