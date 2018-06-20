@@ -9,41 +9,44 @@ import argparse
 
 def create_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("filepath")
-    parser.add_argument("--output", type=str, default="example.xls") 
+    parser.add_argument("--output", type=str, default="example")
     return parser
 
 
-def get_courses_urls(xml_file):
-    with open(xml_file, "r") as xml_file:
-        xml = xml_file.read()
-    tree = etree.fromstring(xml)
+def get_courses_urls(url):
+    response_from_coursera = requests.get(url).content
+    tree = etree.fromstring(response_from_coursera)
     urls = [url.text for url in tree.iter("{*}loc")]
     return urls
 
 
-def get_course_info(url):
+def get_course_params(url):
     html_doc = requests.get(url)
     soup = BeautifulSoup(html_doc.text, "lxml")
     course_mark = soup.find("div", {"class": "ratings-text bt3-visible-xs"})
     if course_mark is not None:
         course_mark = course_mark.text
     course_name = soup.find("title").text
-    course_language = soup.find("div", {"class": "rc-Language"})
-    if course_language is not None:
-        course_language = soup.find("div", {"class": "rc-Language"}).text
+    course_lang = soup.find("div", {"class": "rc-Language"})
+    if course_lang is not None:
+        course_lang = soup.find("div", {"class": "rc-Language"}).text
     course_duration = len(soup.find_all("div", {"class": "week"}))
     json_course = soup.find("script", {"type": "application/ld+json"}).text
     try:
         near_course = json.loads(json_course)["hasCourseInstance"]["startDate"]
     except KeyError:
         near_course = None
-    course_info_dict ={
+    return course_name, course_lang, course_duration, course_mark, near_course
+
+
+def get_course_info(*args):
+    course_name, course_lang, course_duration, course_mark, near_course = args
+    course_info_dict = {
         "Название курса": course_name,
-         "Язык курса": course_language,
-         "Длительность курса": course_duration,
-         "Оценка": course_mark,
-         "Ближайший курс": near_course
+        "Язык курса": course_lang,
+        "Длительность курса": course_duration,
+        "Оценка": course_mark,
+        "Ближайший курс": near_course
     }
     return course_info_dict
 
@@ -70,19 +73,20 @@ def output_courses_info_to_xlsx(courses_info):
 
 
 if __name__ == "__main__":
+    url = "https://www.coursera.org/sitemap~www~courses.xml"
     parser = create_parser()
-    parsargs = parser.parse_args()
-    xml_file = parsargs.filepath
-    all_urls_list = get_courses_urls(xml_file)
-    number_of_courses = 2
+    parser_args = parser.parse_args()
+    all_urls_list = get_courses_urls(url)
+    number_of_courses = 5
     urls_list = random.sample(
         all_urls_list,
         number_of_courses
     )
     courses_info_list = []
     for url in urls_list:
-        course_info = get_course_info(url)
+        course_name, course_lang, course_duration, course_mark, near_course = get_course_params(url)
+        course_info = get_course_info(course_name, course_lang, course_duration, course_mark, near_course)
         courses_info_list.append(course_info)
     courses_workbook = output_courses_info_to_xlsx(courses_info_list)
-    output_filepath = "{}.xls".format(parsargs.output)
+    output_filepath = "{}.xls".format(parser_args.output)
     courses_workbook.save(output_filepath)
