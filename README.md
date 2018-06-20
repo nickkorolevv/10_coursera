@@ -6,7 +6,7 @@
  # Быстрый старт 
  Для установки всех необходимых библиотек введите следующую команду
  ```
- pip install requirements.txt
+ pip install -r requirements.txt # alternatively try pip3
  ```
  Для того, чтобы запустить скрипт необходимо ввести следующую команду
  ```
