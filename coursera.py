@@ -20,9 +20,13 @@ def get_courses_urls(url):
     return urls
 
 
-def get_course_params(url):
+def get_course_page(url):
     html_doc = requests.get(url)
     soup = BeautifulSoup(html_doc.text, "lxml")
+    return soup
+
+
+def get_course_info(soup):
     course_mark = soup.find("div", {"class": "ratings-text bt3-visible-xs"})
     if course_mark is not None:
         course_mark = course_mark.text
@@ -36,11 +40,6 @@ def get_course_params(url):
         near_course = json.loads(json_course)["hasCourseInstance"]["startDate"]
     except KeyError:
         near_course = None
-    return course_name, course_lang, course_duration, course_mark, near_course
-
-
-def get_course_info(*args):
-    course_name, course_lang, course_duration, course_mark, near_course = args
     course_info_dict = {
         "Название курса": course_name,
         "Язык курса": course_lang,
@@ -77,15 +76,15 @@ if __name__ == "__main__":
     parser = create_parser()
     parser_args = parser.parse_args()
     all_urls_list = get_courses_urls(url)
-    number_of_courses = 5
+    number_of_courses = 3
     urls_list = random.sample(
         all_urls_list,
         number_of_courses
     )
     courses_info_list = []
     for url in urls_list:
-        course_name, course_lang, course_duration, course_mark, near_course = get_course_params(url)
-        course_info = get_course_info(course_name, course_lang, course_duration, course_mark, near_course)
+        soup = get_course_page(url)
+        course_info = get_course_info(soup)
         courses_info_list.append(course_info)
     courses_workbook = output_courses_info_to_xlsx(courses_info_list)
     output_filepath = "{}.xls".format(parser_args.output)
