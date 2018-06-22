@@ -9,20 +9,23 @@ import argparse
 
 def create_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", type=str, default="example")
+    parser.add_argument("--output", type=str, default="example.xls")
     return parser
 
 
-def get_courses_urls(url):
-    response_from_coursera = requests.get(url).content
+def get_html_code(url):
+    html_doc = requests.get(url).content
+    return html_doc
+
+
+def get_courses_urls(response_from_coursera):
     tree = etree.fromstring(response_from_coursera)
     urls = [url.text for url in tree.iter("{*}loc")]
     return urls
 
 
-def get_course_page(url):
-    html_doc = requests.get(url)
-    soup = BeautifulSoup(html_doc.text, "lxml")
+def fetch_course_page(html_doc):
+    soup = BeautifulSoup(html_doc, "lxml")
     return soup
 
 
@@ -35,7 +38,9 @@ def get_course_info(soup):
     if course_lang is not None:
         course_lang = soup.find("div", {"class": "rc-Language"}).text
     course_duration = len(soup.find_all("div", {"class": "week"}))
-    json_course = soup.find("script", {"type": "application/ld+json"}).text
+    json_course = soup.find("script", {"type": "application/ld+json"})
+    if json_course is not None:
+        json_course = json_course.text
     try:
         near_course = json.loads(json_course)["hasCourseInstance"]["startDate"]
     except KeyError:
@@ -53,11 +58,13 @@ def get_course_info(soup):
 def output_courses_info_to_xlsx(courses_info):
     courses_workbook = Workbook()
     active_sheet = courses_workbook.active
-    head_line = ["Название курса",
-                 "Язык курса",
-                 "Длительность курса",
-                 "Оценка",
-                 "Ближайший курс"]
+    head_line = [
+        "Название курса",
+        "Язык курса",
+        "Длительность курса",
+        "Оценка",
+        "Ближайший курс"
+    ]
     active_sheet.append(head_line)
 
     for course in courses_info:
@@ -75,17 +82,19 @@ if __name__ == "__main__":
     url = "https://www.coursera.org/sitemap~www~courses.xml"
     parser = create_parser()
     parser_args = parser.parse_args()
-    all_urls_list = get_courses_urls(url)
-    number_of_courses = 3
+    html_doc = get_html_code(url)
+    all_urls_list = get_courses_urls(html_doc)
+    number_of_courses = 20
     urls_list = random.sample(
         all_urls_list,
         number_of_courses
     )
     courses_info_list = []
     for url in urls_list:
-        soup = get_course_page(url)
+        html_doc = get_html_code(url)
+        soup = fetch_course_page(html_doc)
         course_info = get_course_info(soup)
         courses_info_list.append(course_info)
     courses_workbook = output_courses_info_to_xlsx(courses_info_list)
-    output_filepath = "{}.xls".format(parser_args.output)
+    output_filepath = parser_args.output
     courses_workbook.save(output_filepath)
