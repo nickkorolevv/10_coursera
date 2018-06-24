@@ -18,18 +18,14 @@ def get_html_code(url):
     return html_doc
 
 
-def get_courses_urls(response_from_coursera):
-    tree = etree.fromstring(response_from_coursera)
+def get_courses_urls(xml_from_coursera):
+    tree = etree.fromstring(xml_from_coursera)
     urls = [url.text for url in tree.iter("{*}loc")]
     return urls
 
 
-def fetch_course_page(html_doc):
+def get_course_info(html_doc):
     soup = BeautifulSoup(html_doc, "lxml")
-    return soup
-
-
-def get_course_info(soup):
     course_mark = soup.find("div", {"class": "ratings-text bt3-visible-xs"})
     if course_mark is not None:
         course_mark = course_mark.text
@@ -84,7 +80,7 @@ if __name__ == "__main__":
     parser_args = parser.parse_args()
     html_doc = get_html_code(url)
     all_urls_list = get_courses_urls(html_doc)
-    number_of_courses = 20
+    number_of_courses = 3
     urls_list = random.sample(
         all_urls_list,
         number_of_courses
@@ -92,8 +88,7 @@ if __name__ == "__main__":
     courses_info_list = []
     for url in urls_list:
         html_doc = get_html_code(url)
-        soup = fetch_course_page(html_doc)
-        course_info = get_course_info(soup)
+        course_info = get_course_info(html_doc)
         courses_info_list.append(course_info)
     courses_workbook = output_courses_info_to_xlsx(courses_info_list)
     output_filepath = parser_args.output
