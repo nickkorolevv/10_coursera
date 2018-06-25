@@ -13,7 +13,7 @@ def create_parser():
     return parser
 
 
-def get_html_code(url):
+def get_markup(url):
     html_doc = requests.get(url).content
     return html_doc
 
@@ -78,8 +78,8 @@ if __name__ == "__main__":
     url = "https://www.coursera.org/sitemap~www~courses.xml"
     parser = create_parser()
     parser_args = parser.parse_args()
-    html_doc = get_html_code(url)
-    all_urls_list = get_courses_urls(html_doc)
+    xml = get_markup(url)
+    all_urls_list = get_courses_urls(xml)
     number_of_courses = 3
     urls_list = random.sample(
         all_urls_list,
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     )
     courses_info_list = []
     for url in urls_list:
-        html_doc = get_html_code(url)
+        html_doc = get_markup(url)
         course_info = get_course_info(html_doc)
         courses_info_list.append(course_info)
     courses_workbook = output_courses_info_to_xlsx(courses_info_list)
